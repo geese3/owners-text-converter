@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { login } from '@/lib/firebase';
 import { LogIn, AlertCircle } from 'lucide-react';
@@ -12,6 +12,41 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  const [autoLogin, setAutoLogin] = useState(false);
+
+  // 컴포넌트 마운트 시 저장된 정보 불러오기
+  useEffect(() => {
+    const savedUserid = localStorage.getItem('savedUserid');
+    const savedPassword = localStorage.getItem('savedPassword');
+    const savedRememberMe = localStorage.getItem('rememberMe') === 'true';
+    const savedAutoLogin = localStorage.getItem('autoLogin') === 'true';
+
+    if (savedRememberMe && savedUserid) {
+      setUserid(savedUserid);
+      setRememberMe(true);
+    }
+
+    if (savedAutoLogin && savedUserid && savedPassword) {
+      setUserid(savedUserid);
+      setPassword(savedPassword);
+      setAutoLogin(true);
+      setRememberMe(true);
+      
+      // 자동 로그인 실행
+      const autoLoginAsync = async () => {
+        const result = await login(savedUserid, savedPassword);
+        if (result.success) {
+          if (result.user?.isFirstLogin === true) {
+            router.push('/change-password');
+          } else {
+            router.push('/');
+          }
+        }
+      };
+      autoLoginAsync();
+    }
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +57,26 @@ export default function LoginPage() {
       const result = await login(userid, password);
 
       if (result.success) {
+        // 아이디/비밀번호 저장 처리
+        if (rememberMe) {
+          localStorage.setItem('savedUserid', userid);
+          localStorage.setItem('rememberMe', 'true');
+          
+          if (autoLogin) {
+            localStorage.setItem('savedPassword', password);
+            localStorage.setItem('autoLogin', 'true');
+          } else {
+            localStorage.removeItem('savedPassword');
+            localStorage.setItem('autoLogin', 'false');
+          }
+        } else {
+          // 저장 안 함
+          localStorage.removeItem('savedUserid');
+          localStorage.removeItem('savedPassword');
+          localStorage.setItem('rememberMe', 'false');
+          localStorage.setItem('autoLogin', 'false');
+        }
+
         // 최초 로그인 체크
         if (result.user?.isFirstLogin === true) {
           router.push('/change-password');
@@ -100,6 +155,39 @@ export default function LoginPage() {
               placeholder="비밀번호를 입력하세요"
               required
             />
+          </div>
+
+          {/* 아이디 저장 & 자동 로그인 */}
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => {
+                  setRememberMe(e.target.checked);
+                  if (!e.target.checked) {
+                    setAutoLogin(false);
+                  }
+                }}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-700">아이디 저장</span>
+            </label>
+            
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={autoLogin}
+                onChange={(e) => {
+                  setAutoLogin(e.target.checked);
+                  if (e.target.checked) {
+                    setRememberMe(true);
+                  }
+                }}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-700">자동 로그인</span>
+            </label>
           </div>
 
           <button
