@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const admin = require('firebase-admin');
+import * as admin from 'firebase-admin';
 
 // Firebase Admin 초기화
 if (!admin.apps.length) {
@@ -67,10 +66,12 @@ export async function POST(request: NextRequest) {
       user: userData
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('사용자 생성 실패:', error);
     
-    if (error.code === 'auth/email-already-exists') {
+    const err = error as { code?: string; message?: string };
+    
+    if (err.code === 'auth/email-already-exists') {
       return NextResponse.json(
         { success: false, error: '이미 존재하는 아이디입니다' },
         { status: 400 }
@@ -78,7 +79,7 @@ export async function POST(request: NextRequest) {
     }
     
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: err.message || '사용자 생성에 실패했습니다' },
       { status: 500 }
     );
   }

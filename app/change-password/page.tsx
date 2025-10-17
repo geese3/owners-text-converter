@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Key, CheckCircle, AlertCircle, LogOut, Home } from 'lucide-react';
 import { updateDoc, doc } from 'firebase/firestore';
-import { db, auth } from '@/lib/firebase';
-import { updatePassword, signInWithEmailAndPassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { db } from '@/lib/firebase';
+import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 
 export default function ChangePasswordPage() {
   const router = useRouter();
@@ -102,15 +102,17 @@ export default function ChangePasswordPage() {
         // 5. 로그인 페이지로 이동
         router.push('/login');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('비밀번호 변경 실패:', error);
       
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+      const err = error as { code?: string; message?: string };
+      
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
         setError('현재 비밀번호가 올바르지 않습니다');
-      } else if (error.code === 'auth/requires-recent-login') {
+      } else if (err.code === 'auth/requires-recent-login') {
         setError('보안을 위해 다시 로그인이 필요합니다');
       } else {
-        setError(error.message || '비밀번호 변경에 실패했습니다');
+        setError(err.message || '비밀번호 변경에 실패했습니다');
       }
     } finally {
       setIsSubmitting(false);

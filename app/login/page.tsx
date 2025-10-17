@@ -52,7 +52,7 @@ export default function LoginPage() {
       } else {
         setError(result.error || '로그인에 실패했습니다');
       }
-    } catch (err) {
+    } catch {
       setError('로그인 중 오류가 발생했습니다');
     } finally {
       setLoading(false);

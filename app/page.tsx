@@ -424,10 +424,10 @@ export default function TextToExcelConverter() {
         <div className="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
           <h3 className="font-semibold text-gray-900 mb-2">📄 인식 가능한 텍스트 형식</h3>
           <div className="text-sm text-gray-700 space-y-1">
-            <p>• 각 기업 데이터는 <code className="bg-gray-200 px-1 rounded">"신용"</code> 키워드로 구분됩니다</p>
+            <p>• 각 기업 데이터는 <code className="bg-gray-200 px-1 rounded">&quot;신용&quot;</code> 키워드로 구분됩니다</p>
             <p>• <strong>기업명</strong>: 첫 번째 줄에 위치</p>
-            <p>• <strong>대표자명</strong>: "대표자명" 다음 줄에서 자동 추출</p>
-            <p>• <strong>주소</strong>: "주소" 키워드부터 "전화번호" 또는 "최근 재무년도" 전까지</p>
+            <p>• <strong>대표자명</strong>: &quot;대표자명&quot; 다음 줄에서 자동 추출</p>
+            <p>• <strong>주소</strong>: &quot;주소&quot; 키워드부터 &quot;전화번호&quot; 또는 &quot;최근 재무년도&quot; 전까지</p>
           </div>
         </div>
       </div>

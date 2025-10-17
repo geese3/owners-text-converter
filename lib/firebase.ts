@@ -4,9 +4,7 @@ import { initializeApp, getApps } from 'firebase/app'
 import { 
   getAuth, 
   signInWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  onAuthStateChanged,
-  User
+  signOut as firebaseSignOut
 } from 'firebase/auth'
 import { 
   getFirestore, 
@@ -90,11 +88,12 @@ export async function login(userid: string, password: string) {
       success: true,
       user: userData
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('로그인 실패:', error)
+    const err = error as { message?: string }
     return {
       success: false,
-      error: error.message || '로그인에 실패했습니다'
+      error: err.message || '로그인에 실패했습니다'
     }
   }
 }
@@ -104,8 +103,9 @@ export async function signOut() {
   try {
     await firebaseSignOut(auth)
     return { success: true }
-  } catch (error: any) {
-    return { success: false, error: error.message }
+  } catch (error) {
+    const err = error as { message?: string }
+    return { success: false, error: err.message || '로그아웃에 실패했습니다' }
   }
 }
 
@@ -126,11 +126,12 @@ export async function createUser(
 
     const result = await response.json();
     return result;
-  } catch (error: any) {
+  } catch (error) {
     console.error('사용자 생성 실패:', error);
+    const err = error as { message?: string };
     return {
       success: false,
-      error: error.message || '사용자 생성에 실패했습니다'
+      error: err.message || '사용자 생성에 실패했습니다'
     };
   }
 }
@@ -159,8 +160,9 @@ export async function updateUserStatus(uid: string, isActive: boolean) {
       isActive: isActive
     })
     return { success: true }
-  } catch (error: any) {
-    return { success: false, error: error.message }
+  } catch (error) {
+    const err = error as { message?: string }
+    return { success: false, error: err.message || '상태 변경에 실패했습니다' }
   }
 }
 
@@ -177,8 +179,9 @@ export async function changePassword(userid: string, currentPassword: string, ne
     await userCredential.user.updatePassword(newPassword)
     
     return { success: true }
-  } catch (error: any) {
-    return { success: false, error: error.message }
+  } catch (error) {
+    const err = error as { message?: string }
+    return { success: false, error: err.message || '비밀번호 변경에 실패했습니다' }
   }
 }
 
@@ -195,8 +198,9 @@ export async function resetUserPassword(uid: string, newPassword: string = '1q2w
     
     const result = await response.json()
     return result
-  } catch (error: any) {
-    return { success: false, error: error.message }
+  } catch (error) {
+    const err = error as { message?: string }
+    return { success: false, error: err.message || '비밀번호 초기화에 실패했습니다' }
   }
 }
 
@@ -212,9 +216,10 @@ export async function saveConversionLog(log: ConversionLog) {
     })
     
     return { success: true }
-  } catch (error: any) {
+  } catch (error) {
     console.error('로그 저장 실패:', error)
-    return { success: false, error: error.message }
+    const err = error as { message?: string }
+    return { success: false, error: err.message || '로그 저장에 실패했습니다' }
   }
 }
 
@@ -228,7 +233,7 @@ export async function getUserConversionLogs(userId: string) {
     )
     
     const snapshot = await getDocs(q)
-    const logs: any[] = []
+    const logs: Array<Record<string, unknown>> = []
     
     snapshot.forEach((doc) => {
       logs.push({ id: doc.id, ...doc.data() })
@@ -250,7 +255,7 @@ export async function getAllConversionLogs() {
     )
     
     const snapshot = await getDocs(q)
-    const logs: any[] = []
+    const logs: Array<Record<string, unknown>> = []
     
     snapshot.forEach((doc) => {
       logs.push({ id: doc.id, ...doc.data() })

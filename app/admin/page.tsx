@@ -4,14 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAllUsers, createUser, updateUserStatus, getAllConversionLogs, resetUserPassword, UserData } from '@/lib/firebase';
-import { Users, Plus, CheckCircle, XCircle, BarChart, ArrowLeft, Key } from 'lucide-react';
+import { Users, Plus, BarChart, ArrowLeft, Key, CheckCircle } from 'lucide-react';
 
 export default function AdminPage() {
   const router = useRouter();
   const { userData, loading: authLoading } = useAuth();
   
   const [users, setUsers] = useState<UserData[]>([]);
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<Array<Record<string, unknown>>>([]);
   const [showAddUser, setShowAddUser] = useState(false);
   const [loading, setLoading] = useState(true);
   
@@ -353,22 +353,29 @@ export default function AdminPage() {
                 </tr>
               </thead>
               <tbody>
-                {logs.slice(0, 50).map((log, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="border border-gray-300 px-4 py-2">
-                      {users.find(u => u.uid === log.userId)?.userid || '알 수 없음'}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      {log.companyCount}개
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2 text-sm">
-                      {log.filename}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2 text-sm text-gray-600">
-                      {new Date(log.timestamp).toLocaleString('ko-KR')}
-                    </td>
-                  </tr>
-                ))}
+                {logs.slice(0, 50).map((log, index) => {
+                  const userId = log.userId as string;
+                  const companyCount = log.companyCount as number;
+                  const filename = log.filename as string;
+                  const timestamp = log.timestamp as string;
+                  
+                  return (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="border border-gray-300 px-4 py-2">
+                        {users.find(u => u.uid === userId)?.userid || '알 수 없음'}
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2 text-center">
+                        {companyCount}개
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2 text-sm">
+                        {filename}
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2 text-sm text-gray-600">
+                        {new Date(timestamp).toLocaleString('ko-KR')}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

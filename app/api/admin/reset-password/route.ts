@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const admin = require('firebase-admin');
+import * as admin from 'firebase-admin';
 
 // Firebase Admin 초기화
 if (!admin.apps.length) {
@@ -42,10 +41,11 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error('비밀번호 재설정 실패:', error);
+    const err = error as { message?: string };
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: err.message || '비밀번호 재설정에 실패했습니다' },
       { status: 500 }
     );
   }
