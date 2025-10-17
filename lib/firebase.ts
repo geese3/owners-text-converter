@@ -4,7 +4,8 @@ import { initializeApp, getApps } from 'firebase/app'
 import { 
   getAuth, 
   signInWithEmailAndPassword,
-  signOut as firebaseSignOut
+  signOut as firebaseSignOut,
+  updatePassword
 } from 'firebase/auth'
 import { 
   getFirestore, 
@@ -176,7 +177,7 @@ export async function changePassword(userid: string, currentPassword: string, ne
     const userCredential = await signInWithEmailAndPassword(auth, email, currentPassword)
     
     // 새 비밀번호 설정
-    await userCredential.user.updatePassword(newPassword)
+    await updatePassword(userCredential.user, newPassword)
     
     return { success: true }
   } catch (error) {
