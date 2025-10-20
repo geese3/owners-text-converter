@@ -46,9 +46,9 @@ export default function TextToExcelConverter() {
       return false;
     }
     
-    // 대표자명과 주소가 모두 비어있으면 무효
-    if (!company.대표자명 && !company.주소) {
-      console.log('  ❌ 검증 실패: 대표자명과 주소 모두 비어있음');
+    // 주소가 비어있으면 무효 (우편 발송 불가)
+    if (!company.주소 || company.주소.trim().length === 0) {
+      console.log('  ❌ 검증 실패: 주소가 없음 (우편 발송 불가)');
       return false;
     }
     
