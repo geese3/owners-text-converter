@@ -64,34 +64,54 @@ export default function TextToExcelConverter() {
     const companies: CompanyData[] = [];
     const skipped: Array<{company: CompanyData, reason: string, rawText: string}> = [];
     
-    // "신용" 키워드로 각 기업 섹션 분리 (신용 뒤에 줄바꿈이 있거나 없어도 분리)
-    const sections = text.split(/신용\s*[\r\n]/);
-    console.log('📦 전체 섹션 수:', sections.length);
+    // "기업명 ... 신용" 패턴으로 분리
+    // 정규식으로 각 기업 블록을 추출
+    const companyBlocks: string[] = [];
+    const lines = text.split('\n');
+    let currentBlock: string[] = [];
     
-    for (let i = 0; i < sections.length; i++) {
-      const section = sections[i];
-      if (!section.trim()) continue;
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      
+      if (line === '신용') {
+        // 신용 발견 -> 현재 블록 종료
+        if (currentBlock.length > 0) {
+          companyBlocks.push(currentBlock.join('\n'));
+          currentBlock = [];
+        }
+      } else if (currentBlock.length > 0 || (line && line !== '브리핑' && line !== '일반' && line !== '현황' && line !== '재무')) {
+        // 블록에 줄 추가
+        currentBlock.push(lines[i]);
+      }
+    }
+    
+    // 마지막 블록 추가
+    if (currentBlock.length > 0) {
+      companyBlocks.push(currentBlock.join('\n'));
+    }
+    
+    console.log('📦 전체 기업 블록 수:', companyBlocks.length);
+    
+    for (let i = 0; i < companyBlocks.length; i++) {
+      const block = companyBlocks[i];
+      if (!block.trim()) continue;
       
       // 원본 텍스트 저장 (디버깅용)
-      const rawText = section.trim();
+      const rawText = block.trim();
       
-      const lines = section.trim().split('\n');
-      if (lines.length === 0) continue;
+      const blockLines = block.trim().split('\n');
+      if (blockLines.length === 0) continue;
       
       // 기업명 추출 (첫 번째 줄)
-      let companyName = lines[0].trim();
+      let companyName = blockLines[0].trim();
       
-      // 기업명에 불필요한 키워드가 붙어있으면 제거
-      companyName = companyName.replace(/^(업유형\/형태|대표자명|산업분류|주소|전화번호|사업자번호|법인번호|기업상태|브리핑|일반|현황|재무).*/g, '');
-      companyName = companyName.trim();
-      
-      console.log(`\n🏢 섹션 ${i} - 기업명 후보:`, companyName);
+      console.log(`\n🏢 블록 ${i} - 기업명 후보:`, companyName);
       
       // 대표자명 추출
       let ceoName = '';
-      for (let i = 0; i < lines.length; i++) {
-        if (lines[i].includes('대표자명') && i + 1 < lines.length) {
-          const nextLine = lines[i + 1];
+      for (let j = 0; j < blockLines.length; j++) {
+        if (blockLines[j].includes('대표자명') && j + 1 < blockLines.length) {
+          const nextLine = blockLines[j + 1];
           
           // 여러 패턴 시도
           const patterns = [
@@ -116,7 +136,7 @@ export default function TextToExcelConverter() {
       
       // 주소 추출
       let address = '';
-      for (const line of lines) {
+      for (const line of blockLines) {
         if (line.includes('주소')) {
           const startIdx = line.indexOf('주소') + 2;
           
@@ -165,7 +185,7 @@ export default function TextToExcelConverter() {
     }
     
     console.log('\n📊 최종 결과:', {
-      총섹션: sections.length,
+      총블록: companyBlocks.length,
       추출성공: companies.length,
       건너뜀: skipped.length
     });
