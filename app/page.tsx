@@ -64,28 +64,28 @@ export default function TextToExcelConverter() {
     const companies: CompanyData[] = [];
     const skipped: Array<{company: CompanyData, reason: string, rawText: string}> = [];
     
-    // "기업명 ... 신용" 패턴으로 분리
-    // 정규식으로 각 기업 블록을 추출
+    // "신용" 키워드로 각 기업 블록을 분리
+    // 각 블록은 "기업명 ... 신용"까지의 내용
     const companyBlocks: string[] = [];
-    const lines = text.split('\n');
+    const allLines = text.split('\n');
     let currentBlock: string[] = [];
     
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
+    for (let i = 0; i < allLines.length; i++) {
+      const line = allLines[i].trim();
       
+      // "신용" 발견 시 현재 블록 종료
       if (line === '신용') {
-        // 신용 발견 -> 현재 블록 종료
         if (currentBlock.length > 0) {
           companyBlocks.push(currentBlock.join('\n'));
           currentBlock = [];
         }
-      } else if (currentBlock.length > 0 || (line && line !== '브리핑' && line !== '일반' && line !== '현황' && line !== '재무')) {
-        // 블록에 줄 추가
-        currentBlock.push(lines[i]);
+      } else if (line) {
+        // 빈 줄이 아니면 현재 블록에 추가
+        currentBlock.push(allLines[i]);
       }
     }
     
-    // 마지막 블록 추가
+    // 마지막 블록 추가 (마지막에 "신용"이 없는 경우)
     if (currentBlock.length > 0) {
       companyBlocks.push(currentBlock.join('\n'));
     }
