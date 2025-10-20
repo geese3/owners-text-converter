@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { FileText, Download, Eye, Clipboard, CheckCircle, LogOut, Shield } from 'lucide-react';
+import { FileText, Download, Eye, Clipboard, CheckCircle, LogOut, Shield, Upload } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAuth } from '@/contexts/AuthContext';
 import { saveConversionLog } from '@/lib/firebase';
@@ -140,6 +140,29 @@ export default function TextToExcelConverter() {
       console.error('클립보드 읽기 실패:', error);
       alert('❌ 클립보드 접근 권한이 필요합니다.\n브라우저 설정에서 권한을 허용해주세요.');
     }
+  };
+
+  // 파일 업로드
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 텍스트 파일만 허용
+    if (!file.name.endsWith('.txt')) {
+      alert('⚠️ .txt 파일만 업로드 가능합니다!');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      setInputText(text);
+      alert(`✅ ${file.name} 파일 업로드 완료!\n${text.length}자`);
+    };
+    reader.onerror = () => {
+      alert('❌ 파일 읽기에 실패했습니다.');
+    };
+    reader.readAsText(file, 'UTF-8');
   };
 
   // 엑셀 다운로드
@@ -293,13 +316,25 @@ export default function TextToExcelConverter() {
               <FileText className="w-5 h-5 text-blue-600" />
               텍스트 입력
             </h2>
-            <button
-              onClick={handlePaste}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
-            >
-              <Clipboard className="w-4 h-4" />
-              클립보드에서 붙여넣기
-            </button>
+            <div className="flex gap-2">
+              <label className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2 cursor-pointer">
+                <Upload className="w-4 h-4" />
+                파일 업로드
+                <input
+                  type="file"
+                  accept=".txt"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </label>
+              <button
+                onClick={handlePaste}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+              >
+                <Clipboard className="w-4 h-4" />
+                클립보드에서 붙여넣기
+              </button>
+            </div>
           </div>
 
           <textarea
