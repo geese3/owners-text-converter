@@ -22,6 +22,8 @@ export default function TextToExcelConverter() {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [skippedCount, setSkippedCount] = useState(0);
+  const [skippedData, setSkippedData] = useState<Array<{company: CompanyData, reason: string}>>([]);
+  const [showSkippedModal, setShowSkippedModal] = useState(false);
 
   // 인증 체크
   useEffect(() => {
@@ -32,34 +34,34 @@ export default function TextToExcelConverter() {
   }, [user, loading, router]);
 
   // 데이터 유효성 검증
-  const isValidCompanyData = (company: CompanyData): boolean => {
+  const isValidCompanyData = (company: CompanyData): { valid: boolean, reason?: string } => {
     // 기업명이 비어있거나 너무 짧으면 무효
     if (!company.기업명 || company.기업명.length < 2) {
       console.log('  ❌ 검증 실패: 기업명이 비어있거나 너무 짧음');
-      return false;
+      return { valid: false, reason: '기업명이 비어있거나 너무 짧음' };
     }
     
     // 기업명이 특정 키워드만 있으면 무효 (잘못 파싱된 경우)
     const invalidKeywords = ['대표자명', '주소', '전화번호', '사업자번호', '산업분류', '브리핑', '일반', '현황', '재무', '신용'];
     if (invalidKeywords.some(keyword => company.기업명 === keyword)) {
       console.log('  ❌ 검증 실패: 기업명이 키워드임 -', company.기업명);
-      return false;
+      return { valid: false, reason: `기업명이 키워드임 (${company.기업명})` };
     }
     
     // 주소가 비어있으면 무효 (우편 발송 불가)
     if (!company.주소 || company.주소.trim().length === 0) {
       console.log('  ❌ 검증 실패: 주소가 없음 (우편 발송 불가)');
-      return false;
+      return { valid: false, reason: '주소가 없음 (우편 발송 불가)' };
     }
     
     console.log('  ✅ 검증 통과');
-    return true;
+    return { valid: true };
   };
 
   // 텍스트 파싱 함수
   const parseText = (text: string): CompanyData[] => {
     const companies: CompanyData[] = [];
-    let skipped = 0;
+    const skipped: Array<{company: CompanyData, reason: string}> = [];
     
     // "신용" 키워드로 각 기업 섹션 분리 (신용 뒤에 줄바꿈이 있거나 없어도 분리)
     const sections = text.split(/신용\s*[\r\n]/);
@@ -145,11 +147,12 @@ export default function TextToExcelConverter() {
       console.log('📋 파싱된 데이터:', company);
       
       // 유효성 검증
-      if (isValidCompanyData(company)) {
+      const validation = isValidCompanyData(company);
+      if (validation.valid) {
         console.log('✅ 유효한 데이터 - 추가됨');
         companies.push(company);
       } else {
-        skipped++;
+        skipped.push({ company, reason: validation.reason || '알 수 없는 이유' });
         console.log('❌ 무효한 데이터 - 건너뜀');
       }
     }
@@ -157,10 +160,11 @@ export default function TextToExcelConverter() {
     console.log('\n📊 최종 결과:', {
       총섹션: sections.length,
       추출성공: companies.length,
-      건너뜀: skipped
+      건너뜀: skipped.length
     });
     
-    setSkippedCount(skipped);
+    setSkippedCount(skipped.length);
+    setSkippedData(skipped);
     return companies;
   };
 
@@ -463,6 +467,7 @@ export default function TextToExcelConverter() {
                   setParsedData([]);
                   setIsPreviewMode(false);
                   setSkippedCount(0);
+                  setSkippedData([]);
                 }}
                 className="text-sm text-red-600 hover:text-red-800 font-medium"
               >
@@ -487,16 +492,27 @@ export default function TextToExcelConverter() {
                   )}
                 </h2>
               </div>
-              <button
-                onClick={() => {
-                  setParsedData([]);
-                  setIsPreviewMode(false);
-                  setSkippedCount(0);
-                }}
-                className="text-sm text-red-600 hover:text-red-800 font-medium px-3 py-1 border border-red-200 rounded hover:bg-red-50 transition-colors"
-              >
-                ✕ 미리보기 닫기
-              </button>
+              <div className="flex gap-2">
+                {skippedCount > 0 && (
+                  <button
+                    onClick={() => setShowSkippedModal(true)}
+                    className="text-sm text-orange-600 hover:text-orange-800 font-medium px-3 py-1 border border-orange-200 rounded hover:bg-orange-50 transition-colors"
+                  >
+                    ⚠️ {skippedCount}개 건너뜀
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setParsedData([]);
+                    setIsPreviewMode(false);
+                    setSkippedCount(0);
+                    setSkippedData([]);
+                  }}
+                  className="text-sm text-red-600 hover:text-red-800 font-medium px-3 py-1 border border-red-200 rounded hover:bg-red-50 transition-colors"
+                >
+                  ✕ 미리보기 닫기
+                </button>
+              </div>
             </div>
 
             <div className="overflow-x-auto">
@@ -580,6 +596,74 @@ export default function TextToExcelConverter() {
             <p>• <strong>주소</strong>: &quot;주소&quot; 키워드부터 &quot;전화번호&quot; 또는 &quot;최근 재무년도&quot; 전까지</p>
           </div>
         </div> */}
+
+        {/* 건너뛴 데이터 모달 */}
+        {showSkippedModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] flex flex-col">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-bold text-gray-900">
+                    ⚠️ 건너뛴 데이터 ({skippedData.length}개)
+                  </h3>
+                  <button
+                    onClick={() => setShowSkippedModal(false)}
+                    className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+                  >
+                    ×
+                  </button>
+                </div>
+                <p className="text-sm text-gray-600 mt-2">
+                  다음 데이터는 유효성 검증 실패로 엑셀에서 제외되었습니다.
+                </p>
+              </div>
+              
+              <div className="overflow-y-auto p-6 flex-1">
+                <div className="space-y-4">
+                  {skippedData.map((item, index) => (
+                    <div key={index} className="border border-orange-200 rounded-lg p-4 bg-orange-50">
+                      <div className="flex items-start justify-between mb-2">
+                        <span className="font-bold text-orange-900">#{index + 1}</span>
+                        <span className="text-sm bg-orange-200 text-orange-800 px-2 py-1 rounded">
+                          {item.reason}
+                        </span>
+                      </div>
+                      <div className="space-y-2 text-sm">
+                        <div>
+                          <span className="font-semibold text-gray-700">기업명:</span>{' '}
+                          <span className={item.company.기업명 ? 'text-gray-900' : 'text-red-600 italic'}>
+                            {item.company.기업명 || '(없음)'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-gray-700">대표자명:</span>{' '}
+                          <span className={item.company.대표자명 ? 'text-gray-900' : 'text-gray-400 italic'}>
+                            {item.company.대표자명 || '(없음)'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-gray-700">주소:</span>{' '}
+                          <span className={item.company.주소 ? 'text-gray-900' : 'text-red-600 italic'}>
+                            {item.company.주소 || '(없음)'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="p-6 border-t border-gray-200 bg-gray-50">
+                <button
+                  onClick={() => setShowSkippedModal(false)}
+                  className="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors font-medium"
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
