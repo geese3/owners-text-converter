@@ -35,20 +35,24 @@ export default function TextToExcelConverter() {
   const isValidCompanyData = (company: CompanyData): boolean => {
     // 기업명이 비어있거나 너무 짧으면 무효
     if (!company.기업명 || company.기업명.length < 2) {
+      console.log('  ❌ 검증 실패: 기업명이 비어있거나 너무 짧음');
       return false;
     }
     
     // 기업명이 특정 키워드만 있으면 무효 (잘못 파싱된 경우)
     const invalidKeywords = ['대표자명', '주소', '전화번호', '사업자번호', '산업분류', '브리핑', '일반', '현황', '재무', '신용'];
     if (invalidKeywords.some(keyword => company.기업명 === keyword)) {
+      console.log('  ❌ 검증 실패: 기업명이 키워드임 -', company.기업명);
       return false;
     }
     
     // 대표자명과 주소가 모두 비어있으면 무효
     if (!company.대표자명 && !company.주소) {
+      console.log('  ❌ 검증 실패: 대표자명과 주소 모두 비어있음');
       return false;
     }
     
+    console.log('  ✅ 검증 통과');
     return true;
   };
 
@@ -59,8 +63,10 @@ export default function TextToExcelConverter() {
     
     // "신용" 키워드로 각 기업 섹션 분리
     const sections = text.split(/신용\s*\n/);
+    console.log('📦 전체 섹션 수:', sections.length);
     
-    for (const section of sections) {
+    for (let i = 0; i < sections.length; i++) {
+      const section = sections[i];
       if (!section.trim()) continue;
       
       const lines = section.trim().split('\n');
@@ -68,6 +74,7 @@ export default function TextToExcelConverter() {
       
       // 기업명 추출 (첫 번째 줄)
       const companyName = lines[0].trim();
+      console.log(`\n🏢 섹션 ${i} - 기업명 후보:`, companyName);
       if (!companyName) continue;
       
       // 대표자명 추출
@@ -130,14 +137,23 @@ export default function TextToExcelConverter() {
         주소: address
       };
       
+      console.log('📋 파싱된 데이터:', company);
+      
       // 유효성 검증
       if (isValidCompanyData(company)) {
+        console.log('✅ 유효한 데이터 - 추가됨');
         companies.push(company);
       } else {
         skipped++;
-        console.log('⚠️ 건너뛴 데이터:', company);
+        console.log('❌ 무효한 데이터 - 건너뜀');
       }
     }
+    
+    console.log('\n📊 최종 결과:', {
+      총섹션: sections.length,
+      추출성공: companies.length,
+      건너뜀: skipped
+    });
     
     setSkippedCount(skipped);
     return companies;
