@@ -105,7 +105,12 @@ export default function TextToExcelConverter() {
       // 기업명 추출 (첫 번째 줄)
       let companyName = blockLines[0].trim();
       
-      console.log(`\n🏢 블록 ${i} - 기업명 후보:`, companyName);
+      // 기업명에 불필요한 키워드가 붙어있으면 제거
+      const originalName = companyName;
+      companyName = companyName.replace(/^(업유형\/형태|대표자명|산업분류|주소|전화번호|사업자번호|법인번호|기업상태|브리핑|일반|현황|재무).*/g, '');
+      companyName = companyName.trim();
+      
+      console.log(`\n🏢 블록 ${i} - 기업명 원본: "${originalName}" → 정제: "${companyName}"`);
       
       // 대표자명 추출
       let ceoName = '';
