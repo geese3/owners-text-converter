@@ -22,8 +22,9 @@ export default function TextToExcelConverter() {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [skippedCount, setSkippedCount] = useState(0);
-  const [skippedData, setSkippedData] = useState<Array<{company: CompanyData, reason: string}>>([]);
+  const [skippedData, setSkippedData] = useState<Array<{company: CompanyData, reason: string, rawText: string}>>([]);
   const [showSkippedModal, setShowSkippedModal] = useState(false);
+  const [expandedSkippedIndex, setExpandedSkippedIndex] = useState<number | null>(null);
 
   // 인증 체크
   useEffect(() => {
@@ -61,7 +62,7 @@ export default function TextToExcelConverter() {
   // 텍스트 파싱 함수
   const parseText = (text: string): CompanyData[] => {
     const companies: CompanyData[] = [];
-    const skipped: Array<{company: CompanyData, reason: string}> = [];
+    const skipped: Array<{company: CompanyData, reason: string, rawText: string}> = [];
     
     // "신용" 키워드로 각 기업 섹션 분리 (신용 뒤에 줄바꿈이 있거나 없어도 분리)
     const sections = text.split(/신용\s*[\r\n]/);
@@ -70,6 +71,9 @@ export default function TextToExcelConverter() {
     for (let i = 0; i < sections.length; i++) {
       const section = sections[i];
       if (!section.trim()) continue;
+      
+      // 원본 텍스트 저장 (디버깅용)
+      const rawText = section.trim();
       
       const lines = section.trim().split('\n');
       if (lines.length === 0) continue;
@@ -152,7 +156,11 @@ export default function TextToExcelConverter() {
         console.log('✅ 유효한 데이터 - 추가됨');
         companies.push(company);
       } else {
-        skipped.push({ company, reason: validation.reason || '알 수 없는 이유' });
+        skipped.push({ 
+          company, 
+          reason: validation.reason || '알 수 없는 이유',
+          rawText: rawText 
+        });
         console.log('❌ 무효한 데이터 - 건너뜀');
       }
     }
@@ -621,33 +629,64 @@ export default function TextToExcelConverter() {
               <div className="overflow-y-auto p-6 flex-1">
                 <div className="space-y-4">
                   {skippedData.map((item, index) => (
-                    <div key={index} className="border border-orange-200 rounded-lg p-4 bg-orange-50">
-                      <div className="flex items-start justify-between mb-2">
-                        <span className="font-bold text-orange-900">#{index + 1}</span>
-                        <span className="text-sm bg-orange-200 text-orange-800 px-2 py-1 rounded">
-                          {item.reason}
-                        </span>
+                    <div key={index} className="border border-orange-200 rounded-lg overflow-hidden bg-orange-50">
+                      <div 
+                        className="p-4 cursor-pointer hover:bg-orange-100 transition-colors"
+                        onClick={() => setExpandedSkippedIndex(expandedSkippedIndex === index ? null : index)}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-orange-900">#{index + 1}</span>
+                            <span className="text-xs text-gray-500">
+                              {expandedSkippedIndex === index ? '▼ 원본 보기' : '▶ 클릭하여 원본 보기'}
+                            </span>
+                          </div>
+                          <span className="text-sm bg-orange-200 text-orange-800 px-2 py-1 rounded">
+                            {item.reason}
+                          </span>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                          <div>
+                            <span className="font-semibold text-gray-700">기업명:</span>{' '}
+                            <span className={item.company.기업명 ? 'text-gray-900' : 'text-red-600 italic'}>
+                              {item.company.기업명 || '(없음)'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="font-semibold text-gray-700">대표자명:</span>{' '}
+                            <span className={item.company.대표자명 ? 'text-gray-900' : 'text-gray-400 italic'}>
+                              {item.company.대표자명 || '(없음)'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="font-semibold text-gray-700">주소:</span>{' '}
+                            <span className={item.company.주소 ? 'text-gray-900' : 'text-red-600 italic'}>
+                              {item.company.주소 || '(없음)'}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="space-y-2 text-sm">
-                        <div>
-                          <span className="font-semibold text-gray-700">기업명:</span>{' '}
-                          <span className={item.company.기업명 ? 'text-gray-900' : 'text-red-600 italic'}>
-                            {item.company.기업명 || '(없음)'}
-                          </span>
+                      
+                      {expandedSkippedIndex === index && (
+                        <div className="border-t border-orange-300 bg-gray-50 p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-semibold text-gray-700 uppercase">원본 텍스트</span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(item.rawText);
+                                alert('원본 텍스트가 클립보드에 복사되었습니다!');
+                              }}
+                              className="text-xs text-blue-600 hover:text-blue-800 px-2 py-1 border border-blue-300 rounded hover:bg-blue-50"
+                            >
+                              📋 복사
+                            </button>
+                          </div>
+                          <pre className="text-xs bg-white p-3 rounded border border-gray-300 overflow-x-auto whitespace-pre-wrap break-all">
+                            {item.rawText}
+                          </pre>
                         </div>
-                        <div>
-                          <span className="font-semibold text-gray-700">대표자명:</span>{' '}
-                          <span className={item.company.대표자명 ? 'text-gray-900' : 'text-gray-400 italic'}>
-                            {item.company.대표자명 || '(없음)'}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="font-semibold text-gray-700">주소:</span>{' '}
-                          <span className={item.company.주소 ? 'text-gray-900' : 'text-red-600 italic'}>
-                            {item.company.주소 || '(없음)'}
-                          </span>
-                        </div>
-                      </div>
+                      )}
                     </div>
                   ))}
                 </div>
