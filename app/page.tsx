@@ -21,6 +21,7 @@ export default function TextToExcelConverter() {
   const [parsedData, setParsedData] = useState<CompanyData[]>([]);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [skippedCount, setSkippedCount] = useState(0);
 
   // 인증 체크
   useEffect(() => {
@@ -30,9 +31,31 @@ export default function TextToExcelConverter() {
     // 최초 로그인 체크는 로그인 페이지에서 처리하므로 여기서는 제거
   }, [user, loading, router]);
 
+  // 데이터 유효성 검증
+  const isValidCompanyData = (company: CompanyData): boolean => {
+    // 기업명이 비어있거나 너무 짧으면 무효
+    if (!company.기업명 || company.기업명.length < 2) {
+      return false;
+    }
+    
+    // 기업명이 특정 키워드만 있으면 무효 (잘못 파싱된 경우)
+    const invalidKeywords = ['대표자명', '주소', '전화번호', '사업자번호', '산업분류', '브리핑', '일반', '현황', '재무', '신용'];
+    if (invalidKeywords.some(keyword => company.기업명 === keyword)) {
+      return false;
+    }
+    
+    // 대표자명과 주소가 모두 비어있으면 무효
+    if (!company.대표자명 && !company.주소) {
+      return false;
+    }
+    
+    return true;
+  };
+
   // 텍스트 파싱 함수
   const parseText = (text: string): CompanyData[] => {
     const companies: CompanyData[] = [];
+    let skipped = 0;
     
     // "신용" 키워드로 각 기업 섹션 분리
     const sections = text.split(/신용\s*\n/);
@@ -101,15 +124,22 @@ export default function TextToExcelConverter() {
         }
       }
       
-      if (companyName && (ceoName || address)) {
-        companies.push({
-          기업명: companyName,
-          대표자명: ceoName,
-          주소: address
-        });
+      const company: CompanyData = {
+        기업명: companyName,
+        대표자명: ceoName,
+        주소: address
+      };
+      
+      // 유효성 검증
+      if (isValidCompanyData(company)) {
+        companies.push(company);
+      } else {
+        skipped++;
+        console.log('⚠️ 건너뛴 데이터:', company);
       }
     }
     
+    setSkippedCount(skipped);
     return companies;
   };
 
@@ -129,6 +159,13 @@ export default function TextToExcelConverter() {
 
     setParsedData(data);
     setIsPreviewMode(true);
+    
+    // 건너뛴 데이터가 있으면 알림
+    if (skippedCount > 0) {
+      alert(`✅ ${data.length}개 기업 정보 추출 완료!\n⚠️ ${skippedCount}개 데이터는 정보 부족으로 건너뛰었습니다.\n(콘솔에서 상세 내용 확인 가능)`);
+    } else {
+      alert(`✅ ${data.length}개 기업 정보 추출 완료!`);
+    }
   };
 
   // 클립보드에서 붙여넣기
@@ -331,7 +368,7 @@ export default function TextToExcelConverter() {
               <h3 className="font-semibold text-blue-900 mb-2">사용 방법</h3>
               <ol className="text-sm text-blue-800 space-y-1">
                 <li>1️⃣ 크레탑 웹사이트에서 기업 정보를 복사 (Cmd+C / Ctrl+C)</li>
-                <li>2️⃣ 📋 클립보드에서 붙여넣기 버튼 클릭 또는 직접 입력</li>
+                <li>2️⃣ 📋 클립보드에서 붙여넣기 또는 텍스트 파일 드래그 앤 드롭</li>
                 <li>3️⃣ 👁️ 미리보기 버튼으로 추출 결과 확인</li>
                 <li>4️⃣ 📥 엑셀 다운로드 버튼으로 파일 저장</li>
               </ol>
@@ -404,6 +441,7 @@ export default function TextToExcelConverter() {
                   setInputText('');
                   setParsedData([]);
                   setIsPreviewMode(false);
+                  setSkippedCount(0);
                 }}
                 className="text-sm text-red-600 hover:text-red-800 font-medium"
               >
@@ -421,12 +459,18 @@ export default function TextToExcelConverter() {
                 <CheckCircle className="w-6 h-6 text-green-600" />
                 <h2 className="text-xl font-bold text-gray-900">
                   미리보기 ({parsedData.length}개 기업)
+                  {skippedCount > 0 && (
+                    <span className="ml-2 text-sm font-normal text-orange-600">
+                      ({skippedCount}개 건너뜀)
+                    </span>
+                  )}
                 </h2>
               </div>
               <button
                 onClick={() => {
                   setParsedData([]);
                   setIsPreviewMode(false);
+                  setSkippedCount(0);
                 }}
                 className="text-sm text-red-600 hover:text-red-800 font-medium px-3 py-1 border border-red-200 rounded hover:bg-red-50 transition-colors"
               >
@@ -506,7 +550,7 @@ export default function TextToExcelConverter() {
         )}
 
         {/* 샘플 데이터 안내 */}
-        <div className="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
+        {/* <div className="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
           <h3 className="font-semibold text-gray-900 mb-2">📄 인식 가능한 텍스트 형식</h3>
           <div className="text-sm text-gray-700 space-y-1">
             <p>• 각 기업 데이터는 <code className="bg-gray-200 px-1 rounded">&quot;신용&quot;</code> 키워드로 구분됩니다</p>
@@ -514,7 +558,7 @@ export default function TextToExcelConverter() {
             <p>• <strong>대표자명</strong>: &quot;대표자명&quot; 다음 줄에서 자동 추출</p>
             <p>• <strong>주소</strong>: &quot;주소&quot; 키워드부터 &quot;전화번호&quot; 또는 &quot;최근 재무년도&quot; 전까지</p>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );
