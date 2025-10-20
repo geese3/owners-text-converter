@@ -86,7 +86,6 @@ export default function TextToExcelConverter() {
       companyName = companyName.trim();
       
       console.log(`\n🏢 섹션 ${i} - 기업명 후보:`, companyName);
-      if (!companyName) continue;
       
       // 대표자명 추출
       let ceoName = '';
