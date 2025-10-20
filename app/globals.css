@@ -5,9 +5,14 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* 다크 모드 비활성화 - 항상 라이트 모드 */
+html {
+  color-scheme: light;
+}
+
 body {
-  background: #ffffff;
-  color: #171717;
+  background: #ffffff !important;
+  color: #171717 !important;
   font-family: Arial, Helvetica, sans-serif;
 }
 
