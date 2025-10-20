@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "크레탑 데이터 엑셀 변환기",
   description: "텍스트 데이터를 엑셀 파일로 자동 변환",
-  // v1.0.2: Vercel 배포 안정성 개선
+  // v1.0.3: Vercel 배포 재시도
 };
 
 export default function RootLayout({
