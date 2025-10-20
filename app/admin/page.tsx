@@ -206,7 +206,7 @@ export default function AdminPage() {
                     type="text"
                     value={newUser.userid}
                     onChange={(e) => setNewUser({...newUser, userid: e.target.value})}
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
                     placeholder="영문 또는 이메일"
                     required
                   />
@@ -219,7 +219,7 @@ export default function AdminPage() {
                     type="text"
                     value={newUser.name}
                     onChange={(e) => setNewUser({...newUser, name: e.target.value})}
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
                     placeholder="홍길동"
                     required
                   />
