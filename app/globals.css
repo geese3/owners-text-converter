@@ -25,7 +25,7 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* 입력 필드는 항상 검정색 텍스트 */
+/* 입력 필드 텍스트 색상 */
 input,
 textarea {
   color: #111827 !important;
@@ -34,4 +34,17 @@ textarea {
 input::placeholder,
 textarea::placeholder {
   color: #9ca3af !important;
+}
+
+/* 다크 모드일 때 */
+@media (prefers-color-scheme: dark) {
+  input,
+  textarea {
+    color: #f3f4f6 !important;  /* 라이트 그레이 */
+  }
+  
+  input::placeholder,
+  textarea::placeholder {
+    color: #6b7280 !important;  /* 미디엄 그레이 */
+  }
 }
