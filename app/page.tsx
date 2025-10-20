@@ -20,6 +20,7 @@ export default function TextToExcelConverter() {
   const [inputText, setInputText] = useState('');
   const [parsedData, setParsedData] = useState<CompanyData[]>([]);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   // 인증 체크
   useEffect(() => {
@@ -142,11 +143,8 @@ export default function TextToExcelConverter() {
     }
   };
 
-  // 파일 업로드
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  // 파일 읽기 공통 함수
+  const readFile = (file: File) => {
     // 텍스트 파일만 허용
     if (!file.name.endsWith('.txt')) {
       alert('⚠️ .txt 파일만 업로드 가능합니다!');
@@ -163,6 +161,38 @@ export default function TextToExcelConverter() {
       alert('❌ 파일 읽기에 실패했습니다.');
     };
     reader.readAsText(file, 'UTF-8');
+  };
+
+  // 파일 업로드 (버튼 클릭)
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      readFile(file);
+    }
+  };
+
+  // 드래그 앤 드롭 이벤트
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      readFile(file);
+    }
   };
 
   // 엑셀 다운로드
@@ -337,12 +367,32 @@ export default function TextToExcelConverter() {
             </div>
           </div>
 
-          <textarea
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            className="w-full h-80 p-4 border-2 border-gray-300 rounded-lg font-mono text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-            placeholder="크레탑에서 복사한 텍스트를 붙여넣으세요..."
-          />
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`relative ${isDragging ? 'ring-4 ring-blue-400' : ''}`}
+          >
+            <textarea
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              className={`w-full h-80 p-4 border-2 rounded-lg font-mono text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all ${
+                isDragging 
+                  ? 'border-blue-500 bg-blue-50' 
+                  : 'border-gray-300 bg-white'
+              }`}
+              placeholder="크레탑에서 복사한 텍스트를 붙여넣거나, .txt 파일을 드래그하세요..."
+            />
+            {isDragging && (
+              <div className="absolute inset-0 flex items-center justify-center bg-blue-50 bg-opacity-90 border-2 border-dashed border-blue-500 rounded-lg pointer-events-none">
+                <div className="text-center">
+                  <Upload className="w-16 h-16 text-blue-600 mx-auto mb-4" />
+                  <p className="text-xl font-bold text-blue-600">파일을 여기에 드롭하세요</p>
+                  <p className="text-sm text-blue-500 mt-2">.txt 파일만 지원됩니다</p>
+                </div>
+              </div>
+            )}
+          </div>
 
           <div className="mt-4 flex items-center justify-between">
             <p className="text-sm text-gray-500">
