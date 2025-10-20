@@ -61,8 +61,8 @@ export default function TextToExcelConverter() {
     const companies: CompanyData[] = [];
     let skipped = 0;
     
-    // "신용" 키워드로 각 기업 섹션 분리
-    const sections = text.split(/신용\s*\n/);
+    // "신용" 키워드로 각 기업 섹션 분리 (신용 뒤에 줄바꿈이 있거나 없어도 분리)
+    const sections = text.split(/신용\s*[\r\n]/);
     console.log('📦 전체 섹션 수:', sections.length);
     
     for (let i = 0; i < sections.length; i++) {
@@ -73,7 +73,12 @@ export default function TextToExcelConverter() {
       if (lines.length === 0) continue;
       
       // 기업명 추출 (첫 번째 줄)
-      const companyName = lines[0].trim();
+      let companyName = lines[0].trim();
+      
+      // 기업명에 불필요한 키워드가 붙어있으면 제거
+      companyName = companyName.replace(/^(업유형\/형태|대표자명|산업분류|주소|전화번호|사업자번호|법인번호|기업상태|브리핑|일반|현황|재무).*/g, '');
+      companyName = companyName.trim();
+      
       console.log(`\n🏢 섹션 ${i} - 기업명 후보:`, companyName);
       if (!companyName) continue;
       
