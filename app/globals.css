@@ -35,16 +35,3 @@ input::placeholder,
 textarea::placeholder {
   color: #9ca3af !important;
 }
-
-/* 다크 모드일 때 */
-@media (prefers-color-scheme: dark) {
-  input,
-  textarea {
-    color: #f3f4f6 !important;  /* 라이트 그레이 */
-  }
-  
-  input::placeholder,
-  textarea::placeholder {
-    color: #6b7280 !important;  /* 미디엄 그레이 */
-  }
-}
