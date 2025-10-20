@@ -470,6 +470,7 @@ export default function TextToExcelConverter() {
             <textarea
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
+              style={{ color: '#111827' }}
               className={`w-full h-80 p-4 border-2 rounded-lg font-mono text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all ${
                 isDragging 
                   ? 'border-blue-500 bg-blue-50' 
