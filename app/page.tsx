@@ -658,10 +658,8 @@ export default function TextToExcelConverter() {
                 )}
                 <button
                   onClick={() => {
-                    setParsedData([]);
                     setIsPreviewMode(false);
-                    setSkippedCount(0);
-                    setSkippedData([]);
+                    // parsedData, skippedCount, skippedData는 유지 (다운로드 가능하도록)
                   }}
                   className="text-sm text-red-600 hover:text-red-800 font-medium px-3 py-1 border border-red-200 rounded hover:bg-red-50 transition-colors"
                 >
