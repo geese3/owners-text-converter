@@ -578,6 +578,44 @@ export default function TextToExcelConverter() {
           </div>
         </div>
 
+        {/* 액션 버튼 */}
+        <div className="flex gap-4 mb-6">
+          <button
+            onClick={handlePreview}
+            disabled={!inputText.trim()}
+            className="flex-1 px-6 py-4 bg-green-600 text-white rounded-lg font-bold text-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+          >
+            <Eye className="w-5 h-5" />
+            미리보기
+          </button>
+          
+          <button
+            onClick={handleDownload}
+            disabled={parsedData.length === 0}
+            className="flex-1 px-6 py-4 bg-blue-600 text-white rounded-lg font-bold text-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+          >
+            <Download className="w-5 h-5" />
+            엑셀 다운로드
+          </button>
+        </div>
+
+        {/* 통계 */}
+        {parsedData.length > 0 && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="w-6 h-6 text-green-600" />
+              <div>
+                <p className="font-semibold text-green-900">
+                  ✅ {parsedData.length}개 기업 데이터 추출 완료
+                </p>
+                <p className="text-sm text-green-700">
+                  엑셀 다운로드 버튼을 클릭하여 파일을 저장하세요
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 미리보기 영역 */}
         {isPreviewMode && parsedData.length > 0 && (
           <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
@@ -649,44 +687,6 @@ export default function TextToExcelConverter() {
                   ))}
                 </tbody>
               </table>
-            </div>
-          </div>
-        )}
-
-        {/* 액션 버튼 */}
-        <div className="flex gap-4">
-          <button
-            onClick={handlePreview}
-            disabled={!inputText.trim()}
-            className="flex-1 px-6 py-4 bg-green-600 text-white rounded-lg font-bold text-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
-          >
-            <Eye className="w-5 h-5" />
-            미리보기
-          </button>
-          
-          <button
-            onClick={handleDownload}
-            disabled={parsedData.length === 0}
-            className="flex-1 px-6 py-4 bg-blue-600 text-white rounded-lg font-bold text-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
-          >
-            <Download className="w-5 h-5" />
-            엑셀 다운로드
-          </button>
-        </div>
-
-        {/* 통계 */}
-        {parsedData.length > 0 && (
-          <div className="mt-6 bg-green-50 border border-green-200 rounded-lg p-4">
-            <div className="flex items-center gap-3">
-              <CheckCircle className="w-6 h-6 text-green-600" />
-              <div>
-                <p className="font-semibold text-green-900">
-                  ✅ {parsedData.length}개 기업 데이터 추출 완료
-                </p>
-                <p className="text-sm text-green-700">
-                  엑셀 다운로드 버튼을 클릭하여 파일을 저장하세요
-                </p>
-              </div>
             </div>
           </div>
         )}
