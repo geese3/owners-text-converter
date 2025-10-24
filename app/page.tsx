@@ -228,17 +228,13 @@ export default function TextToExcelConverter() {
     // 이미 데이터가 추출된 상태라면 재조회 확인
     if (parsedData.length > 0) {
       const confirmed = window.confirm(
-        '현재 데이터로 다시 조회하시겠습니까?\n\n' +
-        '⚠️ 취소를 누르면 현재 추출된 데이터가 초기화됩니다.'
+        '이미 데이터가 추출되어 있습니다.\n\n' +
+        '현재 텍스트로 다시 조회하시겠습니까?\n' +
+        '(기존 텍스트로 다시 조회됩니다. 취소하면 기존 데이터가 유지됩니다.)'
       );
       
       if (!confirmed) {
-        // 취소 클릭 시 데이터 초기화
-        setParsedData([]);
-        setIsPreviewMode(false);
-        setSkippedCount(0);
-        setSkippedData([]);
-        setInputText('');
+        // 취소 클릭 시 아무것도 하지 않음 (기존 데이터 유지)
         return;
       }
     }
