@@ -647,25 +647,14 @@ export default function TextToExcelConverter() {
                   )}
                 </h2>
               </div>
-              <div className="flex gap-2">
-                {skippedCount > 0 && (
-                  <button
-                    onClick={() => setShowSkippedModal(true)}
-                    className="text-sm text-orange-600 hover:text-orange-800 font-medium px-3 py-1 border border-orange-200 rounded hover:bg-orange-50 transition-colors"
-                  >
-                    ⚠️ {skippedCount}개 건너뜀
-                  </button>
-                )}
+              {skippedCount > 0 && (
                 <button
-                  onClick={() => {
-                    setIsPreviewMode(false);
-                    // parsedData, skippedCount, skippedData는 유지 (다운로드 가능하도록)
-                  }}
-                  className="text-sm text-red-600 hover:text-red-800 font-medium px-3 py-1 border border-red-200 rounded hover:bg-red-50 transition-colors"
+                  onClick={() => setShowSkippedModal(true)}
+                  className="text-sm text-orange-600 hover:text-orange-800 font-medium px-3 py-1 border border-orange-200 rounded hover:bg-orange-50 transition-colors"
                 >
-                  ✕ 미리보기 닫기
+                  ⚠️ {skippedCount}개 건너뜀
                 </button>
-              </div>
+              )}
             </div>
 
             <div className="overflow-x-auto">
