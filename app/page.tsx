@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { FileText, Download, Eye, Clipboard, CheckCircle, LogOut, Shield, Upload } from 'lucide-react';
+import { FileText, Download, Eye, Clipboard, CheckCircle, LogOut, Shield, Upload, ArrowUp } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAuth } from '@/contexts/AuthContext';
 import { saveConversionLog } from '@/lib/firebase';
@@ -26,6 +26,7 @@ export default function TextToExcelConverter() {
   const [skippedData, setSkippedData] = useState<Array<{company: CompanyData, reason: string, rawText: string}>>([]);
   const [showSkippedModal, setShowSkippedModal] = useState(false);
   const [expandedSkippedIndex, setExpandedSkippedIndex] = useState<number | null>(null);
+  const [showTopButton, setShowTopButton] = useState(false);
 
   // 인증 체크
   useEffect(() => {
@@ -34,6 +35,21 @@ export default function TextToExcelConverter() {
     }
     // 최초 로그인 체크는 로그인 페이지에서 처리하므로 여기서는 제거
   }, [user, loading, router]);
+
+  // 스크롤 감지
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowTopButton(window.scrollY > 300);
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Top 버튼 클릭
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // 데이터 유효성 검증
   const isValidCompanyData = (company: CompanyData): { valid: boolean, reason?: string } => {
@@ -801,6 +817,17 @@ export default function TextToExcelConverter() {
           </div>
         )}
       </div>
+
+      {/* Top 버튼 */}
+      {showTopButton && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-8 right-8 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all transform hover:scale-110 z-50"
+          aria-label="맨 위로"
+        >
+          <ArrowUp className="w-6 h-6" />
+        </button>
+      )}
     </div>
   );
 }
