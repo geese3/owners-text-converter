@@ -225,6 +225,24 @@ export default function TextToExcelConverter() {
       return;
     }
 
+    // 이미 데이터가 추출된 상태라면 재조회 확인
+    if (parsedData.length > 0) {
+      const confirmed = window.confirm(
+        '현재 데이터로 다시 조회하시겠습니까?\n\n' +
+        '⚠️ 취소를 누르면 현재 추출된 데이터가 초기화됩니다.'
+      );
+      
+      if (!confirmed) {
+        // 취소 클릭 시 데이터 초기화
+        setParsedData([]);
+        setIsPreviewMode(false);
+        setSkippedCount(0);
+        setSkippedData([]);
+        setInputText('');
+        return;
+      }
+    }
+
     setIsLoadingPreview(true); // 로딩 시작
 
     const data = parseText(inputText);
