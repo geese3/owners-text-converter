@@ -223,30 +223,35 @@ export default function TextToExcelConverter() {
       alert(`✅ ${data.length}개 기업 정보 추출 완료!\n🔍 우편번호를 조회하고 있습니다... (잠시만 기다려주세요)`);
 
       // 각 주소에 대해 우편번호 조회
-      const dataWithPostalCodes = await Promise.all(
-        data.map(async (company) => {
-          try {
-            const response = await fetch('/api/get-postal-code', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ address: company.주소 })
-            });
-            
-            const result = await response.json();
-            
-            return {
-              ...company,
-              우편번호: result.zipNo || '조회 실패'
-            };
-          } catch (error) {
-            console.error('우편번호 조회 오류:', error);
-            return {
-              ...company,
-              우편번호: '조회 실패'
-            };
+      // Rate Limit 방지를 위해 순차적으로 처리 (50ms 간격)
+      const dataWithPostalCodes = [];
+      for (let i = 0; i < data.length; i++) {
+        try {
+          const response = await fetch('/api/get-postal-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address: data[i].주소 })
+          });
+          
+          const result = await response.json();
+          
+          dataWithPostalCodes.push({
+            ...data[i],
+            우편번호: result.zipNo || '조회 실패'
+          });
+          
+          // Rate Limit 방지: 50ms 대기
+          if (i < data.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 50));
           }
-        })
-      );
+        } catch (error) {
+          console.error('우편번호 조회 오류:', error);
+          dataWithPostalCodes.push({
+            ...data[i],
+            우편번호: '조회 실패'
+          });
+        }
+      }
 
       setParsedData(dataWithPostalCodes);
       setIsPreviewMode(true);
