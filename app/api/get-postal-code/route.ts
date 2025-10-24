@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ 
         zipNo: null, 
         error: 'API 키가 설정되지 않았습니다' 
-      });
+      }, { status: 200 }); // 200으로 반환하여 클라이언트가 JSON 파싱 가능하도록
     }
 
     // 주소 정리
@@ -39,10 +39,10 @@ export async function POST(request: NextRequest) {
       .replace(/제\d+호/g, '')    // "제1307호" 제거
       .replace(/\d+층/g, '')      // "14층" 제거
       .replace(/\d+호/g, '')      // "1722호" 제거
-      .replace(/[A-Z]동/g, '')    // "A동", "B동" 제거
+      .replace(/[A-Za-z]동/g, '') // "A동", "B동", "E동" 제거
+      .replace(/(로|대로)(\d+)/g, '$1 $2')  // "판교로228" → "판교로 228"
       .replace(/\s+/g, ' ')       // 여러 공백을 하나로
       .replace(/\s+(번길|번가)/g, '$1')  // "번 길" → "번길", "번 가" → "번가"
-      .replace(/(\d+)(로|길|대로)\s+/g, '$1$2 ') // 도로명 뒤 공백 정리
       .trim();
     
     console.log('🔍 원본 주소:', address);
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ 
           zipNo: null, 
           error: 'API 호출 실패' 
-        });
+        }, { status: 200 });
       }
 
       const data = await response.json();
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ 
           zipNo: null, 
           error: '주소를 찾을 수 없습니다' 
-        });
+        }, { status: 200 });
       }
 
       // 첫 번째 결과에서 우편번호 추출
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ 
         zipNo: null, 
         error: '주소 조회 실패' 
-      });
+      }, { status: 200 });
     }
 
   } catch (error) {
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       zipNo: null, 
       error: error instanceof Error ? error.message : '알 수 없는 오류' 
-    }, { status: 500 });
+    }, { status: 200 }); // 500 대신 200으로 반환하여 JSON 파싱 가능하도록
   }
 }
 
