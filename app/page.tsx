@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { FileText, Download, Eye, Clipboard, CheckCircle, LogOut, Shield, Upload, ArrowUp } from 'lucide-react';
+import { FileText, Download, Eye, Clipboard, CheckCircle, LogOut, Shield, Upload, ArrowUp, Loader2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAuth } from '@/contexts/AuthContext';
 import { saveConversionLog } from '@/lib/firebase';
@@ -27,6 +27,7 @@ export default function TextToExcelConverter() {
   const [showSkippedModal, setShowSkippedModal] = useState(false);
   const [expandedSkippedIndex, setExpandedSkippedIndex] = useState<number | null>(null);
   const [showTopButton, setShowTopButton] = useState(false);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
 
   // 인증 체크
   useEffect(() => {
@@ -224,10 +225,13 @@ export default function TextToExcelConverter() {
       return;
     }
 
+    setIsLoadingPreview(true); // 로딩 시작
+
     const data = parseText(inputText);
     
     if (data.length === 0) {
       alert('데이터를 추출할 수 없습니다. 텍스트 형식을 확인해주세요.');
+      setIsLoadingPreview(false);
       return;
     }
 
@@ -235,8 +239,7 @@ export default function TextToExcelConverter() {
     const enablePostalCodeLookup = true;
 
     if (enablePostalCodeLookup) {
-      // 우편번호 조회 중 메시지 표시
-      alert(`✅ ${data.length}개 기업 정보 추출 완료!\n🔍 우편번호를 조회하고 있습니다... (잠시만 기다려주세요)`);
+      // alert 제거 - 로딩 indicator로 대체
 
       // 각 주소에 대해 우편번호 조회
       // Rate Limit 방지: 동시에 10개씩 배치 처리
@@ -281,13 +284,9 @@ export default function TextToExcelConverter() {
 
       setParsedData(dataWithPostalCodes);
       setIsPreviewMode(true);
+      setIsLoadingPreview(false); // 로딩 완료
       
-      // 건너뛴 데이터가 있으면 알림
-      if (skippedCount > 0) {
-        alert(`✅ ${dataWithPostalCodes.length}개 기업 정보 추출 및 우편번호 조회 완료!\n⚠️ ${skippedCount}개 데이터는 정보 부족으로 건너뛰었습니다.`);
-      } else {
-        alert(`✅ ${dataWithPostalCodes.length}개 기업 정보 추출 및 우편번호 조회 완료!`);
-      }
+      // alert 제거 - 미리보기 창이 바로 표시되므로 불필요
     } else {
       // 우편번호 조회 비활성화 (API 키 미승인)
       const dataWithEmptyPostalCodes = data.map(company => ({
@@ -297,13 +296,9 @@ export default function TextToExcelConverter() {
 
       setParsedData(dataWithEmptyPostalCodes);
       setIsPreviewMode(true);
+      setIsLoadingPreview(false); // 로딩 완료
       
-      // 건너뛴 데이터가 있으면 알림
-      if (skippedCount > 0) {
-        alert(`✅ ${data.length}개 기업 정보 추출 완료!\n⚠️ ${skippedCount}개 데이터는 정보 부족으로 건너뛰었습니다.\n💡 우편번호는 API 키 승인 후 조회 가능합니다.`);
-      } else {
-        alert(`✅ ${data.length}개 기업 정보 추출 완료!\n💡 우편번호는 API 키 승인 후 조회 가능합니다.`);
-      }
+      // alert 제거 - 미리보기 창이 바로 표시되므로 불필요
     }
   };
 
@@ -331,7 +326,7 @@ export default function TextToExcelConverter() {
     reader.onload = (event) => {
       const text = event.target?.result as string;
       setInputText(text);
-      alert(`✅ ${file.name} 파일 업로드 완료!\n${text.length}자`);
+      // alert 제거 - 파일 업로드 시 불필요
     };
     reader.onerror = () => {
       alert('❌ 파일 읽기에 실패했습니다.');
@@ -427,7 +422,7 @@ export default function TextToExcelConverter() {
       });
     }
     
-    alert(`✅ ${parsedData.length}개 기업 데이터가 다운로드되었습니다!\n파일명: ${filename}`);
+    // alert 제거 - 브라우저 다운로드 창이 뜨므로 불필요
   };
 
   // 로딩 중
@@ -598,11 +593,20 @@ export default function TextToExcelConverter() {
         <div className="flex gap-4 mb-6">
           <button
             onClick={handlePreview}
-            disabled={!inputText.trim()}
+            disabled={!inputText.trim() || isLoadingPreview}
             className="flex-1 px-6 py-4 bg-green-600 text-white rounded-lg font-bold text-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
           >
-            <Eye className="w-5 h-5" />
-            미리보기
+            {isLoadingPreview ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                우편번호 조회 중...
+              </>
+            ) : (
+              <>
+                <Eye className="w-5 h-5" />
+                미리보기
+              </>
+            )}
           </button>
           
           <button
