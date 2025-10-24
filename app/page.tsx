@@ -620,10 +620,10 @@ export default function TextToExcelConverter() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-blue-600 text-white">
-                    <th className="border border-blue-700 px-4 py-3 text-left font-bold">번호</th>
-                    <th className="border border-blue-700 px-4 py-3 text-left font-bold">기업명</th>
-                    <th className="border border-blue-700 px-4 py-3 text-left font-bold">대표자명</th>
-                    <th className="border border-blue-700 px-4 py-3 text-left font-bold">우편번호</th>
+                    <th className="border border-blue-700 px-4 py-3 text-left font-bold w-16">번호</th>
+                    <th className="border border-blue-700 px-4 py-3 text-left font-bold w-64">기업명</th>
+                    <th className="border border-blue-700 px-4 py-3 text-left font-bold w-32">대표자명</th>
+                    <th className="border border-blue-700 px-4 py-3 text-left font-bold w-28">우편번호</th>
                     <th className="border border-blue-700 px-4 py-3 text-left font-bold">주소</th>
                   </tr>
                 </thead>
