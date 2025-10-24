@@ -11,6 +11,7 @@ interface CompanyData {
   기업명: string;
   대표자명: string;
   주소: string;
+  우편번호?: string;
 }
 
 export default function TextToExcelConverter() {
@@ -201,7 +202,7 @@ export default function TextToExcelConverter() {
   };
 
   // 미리보기
-  const handlePreview = () => {
+  const handlePreview = async () => {
     if (!inputText.trim()) {
       alert('텍스트를 입력해주세요.');
       return;
@@ -214,14 +215,64 @@ export default function TextToExcelConverter() {
       return;
     }
 
-    setParsedData(data);
-    setIsPreviewMode(true);
-    
-    // 건너뛴 데이터가 있으면 알림
-    if (skippedCount > 0) {
-      alert(`✅ ${data.length}개 기업 정보 추출 완료!\n⚠️ ${skippedCount}개 데이터는 정보 부족으로 건너뛰었습니다.\n(콘솔에서 상세 내용 확인 가능)`);
+    // 우편번호 조회 활성화 여부 (API 키 승인 후 true로 변경)
+    const enablePostalCodeLookup = true;
+
+    if (enablePostalCodeLookup) {
+      // 우편번호 조회 중 메시지 표시
+      alert(`✅ ${data.length}개 기업 정보 추출 완료!\n🔍 우편번호를 조회하고 있습니다... (잠시만 기다려주세요)`);
+
+      // 각 주소에 대해 우편번호 조회
+      const dataWithPostalCodes = await Promise.all(
+        data.map(async (company) => {
+          try {
+            const response = await fetch('/api/get-postal-code', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ address: company.주소 })
+            });
+            
+            const result = await response.json();
+            
+            return {
+              ...company,
+              우편번호: result.zipNo || '조회 실패'
+            };
+          } catch (error) {
+            console.error('우편번호 조회 오류:', error);
+            return {
+              ...company,
+              우편번호: '조회 실패'
+            };
+          }
+        })
+      );
+
+      setParsedData(dataWithPostalCodes);
+      setIsPreviewMode(true);
+      
+      // 건너뛴 데이터가 있으면 알림
+      if (skippedCount > 0) {
+        alert(`✅ ${dataWithPostalCodes.length}개 기업 정보 추출 및 우편번호 조회 완료!\n⚠️ ${skippedCount}개 데이터는 정보 부족으로 건너뛰었습니다.`);
+      } else {
+        alert(`✅ ${dataWithPostalCodes.length}개 기업 정보 추출 및 우편번호 조회 완료!`);
+      }
     } else {
-      alert(`✅ ${data.length}개 기업 정보 추출 완료!`);
+      // 우편번호 조회 비활성화 (API 키 미승인)
+      const dataWithEmptyPostalCodes = data.map(company => ({
+        ...company,
+        우편번호: '' // 빈 값으로 설정
+      }));
+
+      setParsedData(dataWithEmptyPostalCodes);
+      setIsPreviewMode(true);
+      
+      // 건너뛴 데이터가 있으면 알림
+      if (skippedCount > 0) {
+        alert(`✅ ${data.length}개 기업 정보 추출 완료!\n⚠️ ${skippedCount}개 데이터는 정보 부족으로 건너뛰었습니다.\n💡 우편번호는 API 키 승인 후 조회 가능합니다.`);
+      } else {
+        alert(`✅ ${data.length}개 기업 정보 추출 완료!\n💡 우편번호는 API 키 승인 후 조회 가능합니다.`);
+      }
     }
   };
 
@@ -301,10 +352,11 @@ export default function TextToExcelConverter() {
     
     // 데이터 배열 준비 (헤더 + 데이터)
     const wsData = [
-      ['기업명', '대표자명', '주소'],
+      ['기업명', '대표자명', '우편번호', '주소'],
       ...parsedData.map(company => [
         company.기업명,
         company.대표자명,
+        company.우편번호 || '',
         company.주소
       ])
     ];
@@ -316,6 +368,7 @@ export default function TextToExcelConverter() {
     ws['!cols'] = [
       { wch: 30 },  // 기업명
       { wch: 15 },  // 대표자명
+      { wch: 10 },  // 우편번호
       { wch: 50 }   // 주소
     ];
     
@@ -555,6 +608,7 @@ export default function TextToExcelConverter() {
                     <th className="border border-blue-700 px-4 py-3 text-left font-bold">번호</th>
                     <th className="border border-blue-700 px-4 py-3 text-left font-bold">기업명</th>
                     <th className="border border-blue-700 px-4 py-3 text-left font-bold">대표자명</th>
+                    <th className="border border-blue-700 px-4 py-3 text-left font-bold">우편번호</th>
                     <th className="border border-blue-700 px-4 py-3 text-left font-bold">주소</th>
                   </tr>
                 </thead>
@@ -569,6 +623,9 @@ export default function TextToExcelConverter() {
                       </td>
                       <td className="border border-gray-300 px-4 py-2">
                         {company.대표자명 || '-'}
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2 text-center font-mono text-sm">
+                        {company.우편번호 || '-'}
                       </td>
                       <td className="border border-gray-300 px-4 py-2 text-sm">
                         {company.주소 || '-'}
