@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 
-// Firebase Admin 초기화
-if (!admin.apps.length) {
-  try {
+// Firebase Admin 초기화 함수 (런타임에 실행)
+function initializeFirebaseAdmin() {
+  if (!admin.apps.length) {
     // 환경 변수에서 서비스 계정 키 읽기
     if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
       throw new Error('FIREBASE_SERVICE_ACCOUNT 환경 변수가 설정되지 않았습니다. Vercel 환경 변수를 확인하세요.');
@@ -14,14 +14,14 @@ if (!admin.apps.length) {
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount)
     });
-  } catch (error) {
-    console.error('Firebase Admin 초기화 실패:', error);
-    throw error;
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    // Firebase Admin 초기화 (런타임)
+    initializeFirebaseAdmin();
+    
     const { uid, newPassword } = await request.json();
 
     if (!uid || !newPassword) {
