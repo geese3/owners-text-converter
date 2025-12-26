@@ -28,6 +28,7 @@ export default function TextToExcelConverter() {
   const [expandedSkippedIndex, setExpandedSkippedIndex] = useState<number | null>(null);
   const [showTopButton, setShowTopButton] = useState(false);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  const [enablePostalCodeLookup, setEnablePostalCodeLookup] = useState(false);
 
   // 인증 체크
   useEffect(() => {
@@ -249,12 +250,8 @@ export default function TextToExcelConverter() {
       return;
     }
 
-    // 우편번호 조회 활성화 여부 (API 키 승인 후 true로 변경)
-    const enablePostalCodeLookup = true;
-
     if (enablePostalCodeLookup) {
-      // alert 제거 - 로딩 indicator로 대체
-
+      // 우편번호 조회 활성화
       // 각 주소에 대해 우편번호 조회
       // Rate Limit 방지: 동시에 10개씩 배치 처리
       const BATCH_SIZE = 10;
@@ -299,20 +296,16 @@ export default function TextToExcelConverter() {
       setParsedData(dataWithPostalCodes);
       setIsPreviewMode(true);
       setIsLoadingPreview(false); // 로딩 완료
-      
-      // alert 제거 - 미리보기 창이 바로 표시되므로 불필요
     } else {
-      // 우편번호 조회 비활성화 (API 키 미승인)
-      const dataWithEmptyPostalCodes = data.map(company => ({
+      // 우편번호 조회 비활성화 - 우편번호 없이 기본 정보만
+      const dataWithoutPostalCodes = data.map(company => ({
         ...company,
-        우편번호: '' // 빈 값으로 설정
+        우편번호: undefined // 우편번호 필드 제거
       }));
 
-      setParsedData(dataWithEmptyPostalCodes);
+      setParsedData(dataWithoutPostalCodes);
       setIsPreviewMode(true);
       setIsLoadingPreview(false); // 로딩 완료
-      
-      // alert 제거 - 미리보기 창이 바로 표시되므로 불필요
     }
   };
 
@@ -390,27 +383,50 @@ export default function TextToExcelConverter() {
     // 워크북 생성
     const wb = XLSX.utils.book_new();
     
+    // 우편번호가 있는지 확인 (첫 번째 데이터 기준)
+    const hasPostalCode = parsedData.length > 0 && parsedData[0].우편번호 !== undefined;
+    
     // 데이터 배열 준비 (헤더 + 데이터)
+    const headers = hasPostalCode 
+      ? ['기업명', '대표자명', '우편번호', '주소']
+      : ['기업명', '대표자명', '주소'];
+    
     const wsData = [
-      ['기업명', '대표자명', '우편번호', '주소'],
-      ...parsedData.map(company => [
-        company.기업명,
-        company.대표자명,
-        company.우편번호 || '',
-        company.주소
-      ])
+      headers,
+      ...parsedData.map(company => {
+        if (hasPostalCode) {
+          return [
+            company.기업명,
+            company.대표자명,
+            company.우편번호 || '',
+            company.주소
+          ];
+        } else {
+          return [
+            company.기업명,
+            company.대표자명,
+            company.주소
+          ];
+        }
+      })
     ];
     
     // 워크시트 생성
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     
     // 열 너비 설정
-    ws['!cols'] = [
-      { wch: 30 },  // 기업명
-      { wch: 15 },  // 대표자명
-      { wch: 10 },  // 우편번호
-      { wch: 50 }   // 주소
-    ];
+    ws['!cols'] = hasPostalCode
+      ? [
+          { wch: 30 },  // 기업명
+          { wch: 15 },  // 대표자명
+          { wch: 10 },  // 우편번호
+          { wch: 50 }   // 주소
+        ]
+      : [
+          { wch: 30 },  // 기업명
+          { wch: 15 },  // 대표자명
+          { wch: 50 }   // 주소
+        ];
     
     // 워크북에 시트 추가
     XLSX.utils.book_append_sheet(wb, ws, '기업 데이터');
@@ -603,6 +619,24 @@ export default function TextToExcelConverter() {
           </div>
         </div>
 
+        {/* 우편번호 조회 옵션 */}
+        <div className="bg-white rounded-lg shadow-lg p-4 mb-6">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={enablePostalCodeLookup}
+              onChange={(e) => setEnablePostalCodeLookup(e.target.checked)}
+              className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <div>
+              <span className="text-sm font-semibold text-gray-900">우편번호 조회 포함</span>
+              <p className="text-xs text-gray-500 mt-1">
+                체크 시 카카오 API를 통해 우편번호를 자동으로 조회합니다
+              </p>
+            </div>
+          </label>
+        </div>
+
         {/* 액션 버튼 */}
         <div className="flex gap-4 mb-6">
           <button
@@ -613,7 +647,7 @@ export default function TextToExcelConverter() {
             {isLoadingPreview ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                우편번호 조회 중...
+                {enablePostalCodeLookup ? '우편번호 조회 중...' : '데이터 처리 중...'}
               </>
             ) : (
               <>
@@ -682,7 +716,9 @@ export default function TextToExcelConverter() {
                     <th className="border border-blue-700 px-4 py-3 text-left font-bold w-16">번호</th>
                     <th className="border border-blue-700 px-4 py-3 text-left font-bold w-64">기업명</th>
                     <th className="border border-blue-700 px-4 py-3 text-left font-bold w-32">대표자명</th>
-                    <th className="border border-blue-700 px-4 py-3 text-left font-bold w-28">우편번호</th>
+                    {parsedData.length > 0 && parsedData[0].우편번호 !== undefined && (
+                      <th className="border border-blue-700 px-4 py-3 text-left font-bold w-28">우편번호</th>
+                    )}
                     <th className="border border-blue-700 px-4 py-3 text-left font-bold">주소</th>
                   </tr>
                 </thead>
@@ -698,9 +734,11 @@ export default function TextToExcelConverter() {
                       <td className="border border-gray-300 px-4 py-2">
                         {company.대표자명 || '-'}
                       </td>
-                      <td className="border border-gray-300 px-4 py-2 text-center font-mono text-sm">
-                        {company.우편번호 || '-'}
-                      </td>
+                      {company.우편번호 !== undefined && (
+                        <td className="border border-gray-300 px-4 py-2 text-center font-mono text-sm">
+                          {company.우편번호 || '-'}
+                        </td>
+                      )}
                       <td className="border border-gray-300 px-4 py-2 text-sm">
                         {company.주소 || '-'}
                       </td>
