@@ -598,43 +598,45 @@ export default function TextToExcelConverter() {
             )}
           </div>
 
-          <div className="mt-4 flex items-center justify-between">
-            <p className="text-sm text-gray-500">
-              {inputText.length > 0 ? `${inputText.length}자 입력됨` : '텍스트를 입력하거나 붙여넣으세요'}
-            </p>
-            {inputText.length > 0 && (
-              <button
-                onClick={() => {
-                  setInputText('');
-                  setParsedData([]);
-                  setIsPreviewMode(false);
-                  setSkippedCount(0);
-                  setSkippedData([]);
-                }}
-                className="text-sm text-red-600 hover:text-red-800 font-medium"
-              >
-                🔄 전체 초기화
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* 우편번호 조회 옵션 */}
-        <div className="bg-white rounded-lg shadow-lg p-4 mb-6">
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={enablePostalCodeLookup}
-              onChange={(e) => setEnablePostalCodeLookup(e.target.checked)}
-              className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <div>
-              <span className="text-sm font-semibold text-gray-900">우편번호 조회 포함</span>
-              <p className="text-xs text-gray-500 mt-1">
-                체크 시 카카오 API를 통해 우편번호를 자동으로 조회합니다
+          <div className="mt-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-500">
+                {inputText.length > 0 ? `${inputText.length}자 입력됨` : '텍스트를 입력하거나 붙여넣으세요'}
               </p>
+              {inputText.length > 0 && (
+                <button
+                  onClick={() => {
+                    setInputText('');
+                    setParsedData([]);
+                    setIsPreviewMode(false);
+                    setSkippedCount(0);
+                    setSkippedData([]);
+                  }}
+                  className="text-sm text-red-600 hover:text-red-800 font-medium"
+                >
+                  🔄 전체 초기화
+                </button>
+              )}
             </div>
-          </label>
+            
+            {/* 우편번호 조회 옵션 */}
+            <div className="pt-3 border-t border-gray-200">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={enablePostalCodeLookup}
+                  onChange={(e) => setEnablePostalCodeLookup(e.target.checked)}
+                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <div>
+                  <span className="text-sm font-semibold text-gray-900">📮 우편번호 조회 포함</span>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    체크 시 카카오 API를 통해 우편번호를 자동으로 조회합니다
+                  </p>
+                </div>
+              </label>
+            </div>
+          </div>
         </div>
 
         {/* 액션 버튼 */}

@@ -64,13 +64,15 @@ export async function login(userid: string, password: string) {
     // @가 포함되어 있으면 그대로 사용, 없으면 @local.local 추가
     const email = userid.includes('@') ? userid : `${userid}@local.local`
     
+    console.log('🔐 로그인 시도:', { userid, email: email.substring(0, 10) + '...' })
+    
     const userCredential = await signInWithEmailAndPassword(auth, email, password)
     
     // Firestore에서 사용자 정보 가져오기
     const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid))
     
     if (!userDoc.exists()) {
-      throw new Error('사용자 정보를 찾을 수 없습니다')
+      throw new Error('사용자 정보를 찾을 수 없습니다. 관리자에게 문의하세요.')
     }
     
     const userData = userDoc.data() as UserData
@@ -85,16 +87,53 @@ export async function login(userid: string, password: string) {
       lastLogin: new Date().toISOString()
     })
     
+    console.log('✅ 로그인 성공:', userData.userid)
+    
     return {
       success: true,
       user: userData
     }
   } catch (error) {
-    console.error('로그인 실패:', error)
-    const err = error as { message?: string }
+    console.error('❌ 로그인 실패:', error)
+    
+    const err = error as { code?: string; message?: string }
+    
+    // Firebase 에러 코드에 따른 사용자 친화적 메시지
+    let errorMessage = '로그인에 실패했습니다'
+    
+    if (err.code) {
+      switch (err.code) {
+        case 'auth/invalid-credential':
+          errorMessage = '아이디 또는 비밀번호가 올바르지 않습니다.\n\n확인 사항:\n- 아이디가 정확한지 확인하세요\n- 비밀번호가 정확한지 확인하세요\n- 계정이 생성되어 있는지 확인하세요'
+          break
+        case 'auth/user-not-found':
+          errorMessage = '존재하지 않는 사용자입니다. 관리자에게 계정 생성을 요청하세요.'
+          break
+        case 'auth/wrong-password':
+          errorMessage = '비밀번호가 올바르지 않습니다.'
+          break
+        case 'auth/invalid-email':
+          errorMessage = '올바르지 않은 이메일 형식입니다.'
+          break
+        case 'auth/user-disabled':
+          errorMessage = '이용이 중지된 계정입니다. 관리자에게 문의하세요.'
+          break
+        case 'auth/too-many-requests':
+          errorMessage = '너무 많은 로그인 시도가 있었습니다. 잠시 후 다시 시도하세요.'
+          break
+        case 'auth/network-request-failed':
+          errorMessage = '네트워크 오류가 발생했습니다. 인터넷 연결을 확인하세요.'
+          break
+        default:
+          errorMessage = err.message || `로그인에 실패했습니다. (오류 코드: ${err.code})`
+      }
+    } else if (err.message) {
+      errorMessage = err.message
+    }
+    
     return {
       success: false,
-      error: err.message || '로그인에 실패했습니다'
+      error: errorMessage
     }
   }
 }
